@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: "jdbc:postgresql://kesavan.db.elephantsql.com:5432/sydfudwg"
+    username: sydfudwg
+    password: uZOiEXt0Qt_D_gYKPOcQ_oXBH9U319hE

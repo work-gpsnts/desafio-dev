@@ -1,0 +1,44 @@
+plugins {
+	id "io.freefair.lombok" version "6.1.0"
+	id "org.springframework.boot" version "2.5.4"
+	id "io.spring.dependency-management" version "1.0.11.RELEASE"
+	id "java"
+}
+
+group = "desafio.bycoders"
+version = "0.0.1-SNAPSHOT"
+sourceCompatibility = "11"
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set("PLSQL_LIB_VERSION", "42.2.23")
+	set("MODEL_MAPPER_LIB_VERSION", "2.4.4")
+	set("GUAVA_LIB_VERSION", "30.1.1-jre")
+}
+
+dependencies {
+	implementation "org.springframework.boot:spring-boot-starter-web"
+	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+
+	implementation "org.postgresql:postgresql:${PLSQL_LIB_VERSION}"
+	implementation "org.modelmapper:modelmapper:${MODEL_MAPPER_LIB_VERSION}"
+	implementation "com.google.guava:guava:${GUAVA_LIB_VERSION}"
+
+	// compileOnly "org.projectlombok:lombok"
+	// runtimeOnly "org.postgresql:postgresql"
+	// annotationProcessor "org.projectlombok:lombok"
+	testImplementation "org.springframework.boot:spring-boot-starter-test"
+}
+
+test {
+	useJUnitPlatform()
+}
