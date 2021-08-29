@@ -3,27 +3,26 @@ package desafio.bycoders.cnab_doc.service;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import desafio.bycoders.cnab_doc.enums.OperacaoSinal;
+import desafio.bycoders.cnab_doc.enums.TipoOperacao;
 import desafio.bycoders.cnab_doc.model.DocumentoCNAB;
 import desafio.bycoders.cnab_doc.repository.CnabRepository;
 import desafio.bycoders.cnab_doc.util.StringUtil;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import desafio.bycoders.cnab_doc.dto.DocumentCNABDto;
 import desafio.bycoders.cnab_doc.util.OffsetUtil;
 import desafio.bycoders.cnab_doc.util.Tuple2;
+
+import static java.util.Map.entry;
 
 @Service
 public class CnabService {
@@ -70,7 +69,45 @@ public class CnabService {
 		return Objects.requireNonNull(text).split("\n");
 	}
 
-	public int tratadorDocumentoCnab(MultipartFile documento) {
+	private Map<String, Object> processaRetorno(List<DocumentoCNAB> documentosSalvos) {
+		Map<String, List<DocumentoCNAB>> agrupamentoLojaOperacoesTotal = documentosSalvos.stream()
+				.collect(Collectors.groupingBy(DocumentoCNAB::getNomeLoja));
+
+		Map<String, Object> retornoOperacao = new HashMap<>();
+
+		agrupamentoLojaOperacoesTotal.forEach((key, value) -> {
+			double total = value.stream()
+					.map(el -> TipoOperacao.mapeiaTipoParaTipoOperacao(el.getTipo()).getOperacao() == OperacaoSinal.OPERACAO_SOMA
+							? el.getValor()
+							: el.getValor() * -1
+					)
+					.reduce(0.0, Double::sum);
+
+			List<String> operacoes = value.stream().map(el -> {
+				TipoOperacao tipo = TipoOperacao.mapeiaTipoParaTipoOperacao(el.getTipo());
+				String data = el.getData(), hora = el.getHora();
+
+				return String.format(
+						"Operação de %s com %s de R$%s%.2f na data %s %s",
+						tipo.getDescricao(),
+						tipo.getNatureza().getDescricaoNatureza(),
+						tipo.getOperacao().getDigito(),
+						el.getValor(),
+						String.format("%s/%s/%s", data.substring(6), data.substring(4, 6), data.substring(0, 4)),
+						String.format("%s:%s:%s", hora.substring(0, 2), hora.substring(2, 4), hora.substring(4))
+				);
+			}).collect(Collectors.toList());
+
+			retornoOperacao.put(key, Map.ofEntries(
+					entry("operacoes", operacoes),
+					entry("total",  Math.floor(total * 100) / 100)) // "Truncade" no valor do Double
+			);
+		});
+
+		return retornoOperacao;
+	}
+
+	public Map<String, Object> tratadorDocumentoCnab(MultipartFile documento) {
 		Map<String, Tuple2<Integer, Integer>> limitadores =  OffsetUtil.offsetsPorCampo()
 				.entrySet()
 				.stream()
@@ -87,6 +124,14 @@ public class CnabService {
 
 		repository.saveAll(documentosSalvos);
 
-		return documentosSalvos.size();
+		return processaRetorno(documentosSalvos);
+	}
+
+	public Map<String, Object> retornaDocumentosCadastrados() {
+		List<DocumentoCNAB> docsRegistrados = StreamSupport.stream(
+			repository.findAll().spliterator(), false).collect(Collectors.toList()
+		);
+
+		return processaRetorno(docsRegistrados);
 	}
 }

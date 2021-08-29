@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import desafio.bycoders.cnab_doc.dto.DocumentCNABDto;
 import desafio.bycoders.cnab_doc.model.DocumentoCNAB;
 
 public class OffsetUtil {

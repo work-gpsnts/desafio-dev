@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class RetornoCnab {
-  private final int contagem;
+public class RetornoCnab<T> {
   private final String mensagem;
+  private final T dados;
 }
